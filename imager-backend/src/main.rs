@@ -21,7 +21,14 @@ use std::result;
 
 #[derive(Deserialize)]
 struct Config {
+    server: Server,
     database: Database,
+}
+
+#[derive(Deserialize)]
+struct Server {
+    address: String,
+    port: u16,
 }
 
 #[derive(Deserialize)]
@@ -65,7 +72,7 @@ async fn main() -> RResult<()> {
             .app_data(web::Data::new(pool.clone()))
             .configure(service::route::init_route)
     })
-    .bind(("127.0.0.1", 80))
+    .bind((config.server.address, config.server.port))
     .map_err(|_| RError::Io(format!("failed to bind the port")))?
     .run()
     .await
