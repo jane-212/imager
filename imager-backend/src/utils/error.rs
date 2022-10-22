@@ -13,6 +13,8 @@ use std::result;
 pub enum IError {
     #[error("unknown error")]
     Unknown
+    #[error("database error")]
+    Database
 }
 
 pub type IResult<T> = result::Result<T, IError>;
@@ -28,7 +30,8 @@ impl ResponseError for IError {
 
     fn status_code(&self) -> StatusCode {
         match *self {
-            IError::Unknown => StatusCode::BAD_REQUEST,
+            IError::Unknown => StatusCode::INTERNAL_SERVER_ERROR,
+            IError::Database => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }

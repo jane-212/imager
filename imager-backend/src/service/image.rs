@@ -10,10 +10,7 @@ use sqlx::{
     MySql,
 };
 
-use crate::utils::error::{
-    IError,
-    IResult,
-};
+use crate::utils::error::IResult;
 
 use crate::model::image;
 
@@ -21,7 +18,6 @@ pub fn init_route(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/image")
             .service(get_all_images)
-            .service(get_error)
     );
 }
 
@@ -33,9 +29,4 @@ async fn get_all_images(pool: web::Data<Pool<MySql>>) -> IResult<HttpResponse> {
             "msg": "success",
             "data": image::get_all_images(&pool).await?,
         })))
-}
-
-#[get("/error")]
-async fn get_error() -> IResult<HttpResponse> {
-    Err(IError::Unknown)
 }

@@ -31,7 +31,7 @@ pub async fn get_all_images(pool: &Pool<MySql>) -> IResult<Vec<Image>> {
     let images: Vec<Image> = sqlx::query_as::<_, Image>(sql)
         .fetch_all(pool)
         .await
-        .map_err(|_| IError::Unknown)?;
+        .map_err(|_| IError::Database)?;
 
     Ok(images)
 }
