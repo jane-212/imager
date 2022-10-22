@@ -1,6 +1,6 @@
 use actix_web::web;
-use super::image::route;
+use super::image;
 
 pub fn init_route(cfg: &mut web::ServiceConfig) {
-    cfg.configure(route::init_route);
+    cfg.configure(image::init_route);
 }

@@ -12,9 +12,9 @@ use std::result;
 #[derive(Error, Debug)]
 pub enum IError {
     #[error("unknown error")]
-    Unknown
+    Unknown,
     #[error("database error")]
-    Database
+    Database,
 }
 
 pub type IResult<T> = result::Result<T, IError>;

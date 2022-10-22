@@ -37,7 +37,7 @@ enum RError {
     #[error("{0}")]
     Io(String),
     #[error("{0}")]
-    Database(String)
+    Database(String),
 }
 
 type RResult<T> = result::Result<T, RError>;
