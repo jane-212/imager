@@ -1,26 +1,77 @@
 use actix_web::{
-    App,
     HttpServer,
-    Responder,
-    get,
+    App,
+    web,
 };
 
-use anyhow::Result;
+use imager::service;
 
-#[actix_web::main]
-async fn main() -> Result<()> {
-    HttpServer::new(|| {
-        App::new()
-            .service(hello)
-    })
-    .bind(("0.0.0.0", 80))?
-    .run()
-    .await?;
+use std::{
+    fs::File,
+    io::Read,
+};
 
-    Ok(())
+use serde::Deserialize;
+
+use sqlx::mysql::MySqlPoolOptions;
+
+use thiserror::Error;
+
+use std::result;
+
+#[derive(Deserialize)]
+struct Config {
+    database: Database,
 }
 
-#[get("/")]
-async fn hello() -> impl Responder {
-    "hello"
+#[derive(Deserialize)]
+struct Database {
+    database_url: String,
+    max_connection: u32,
+}
+
+static CONFIG_PATH: &'static str = "config.toml";
+
+#[derive(Error, Debug)]
+enum RError {
+    #[error("{0}")]
+    Io(String),
+    #[error("{0}")]
+    Database(String)
+}
+
+type RResult<T> = result::Result<T, RError>;
+
+#[actix_web::main]
+async fn main() -> RResult<()> {
+    let mut file = File::open(CONFIG_PATH).map_err(|_| RError::Io(format!("can't find {}", CONFIG_PATH)))?;
+
+    let mut config = String::new();
+
+    let _ = file.read_to_string(&mut config).map_err(|_| RError::Io(format!("can't read from {}", CONFIG_PATH)))?;
+
+    let config: Config = toml::from_str(&config).map_err(|_| RError::Io(format!("a mistake found in {}", CONFIG_PATH)))?;
+
+    let pool = MySqlPoolOptions::new()
+        .max_connections(config.database.max_connection)
+        .connect(&config.database.database_url)
+        .await
+        .map_err(|_| RError::Database(format!("can't connect to database")))?;
+
+    println!("server start...");
+
+    HttpServer::new(move || {
+        App::new()
+            .app_data(web::Data::new(pool.clone()))
+            .configure(service::route::init_route)
+    })
+    .bind(("127.0.0.1", 80))
+    .map_err(|_| RError::Io(format!("failed to bind the port")))?
+    .run()
+    .await
+    .map_err(|_| RError::Io(format!("can't run the server")))?;
+
+    println!("server quit...");
+
+    Ok(())
 }
