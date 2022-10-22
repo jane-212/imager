@@ -1,7 +1,8 @@
 use actix_web::{
-    HttpServer,
-    App,
     web,
+    App,
+    HttpServer,
+    middleware,
 };
 
 use imager::service;
@@ -19,6 +20,8 @@ use thiserror::Error;
 
 use std::result;
 
+use log::info;
+
 #[derive(Deserialize)]
 struct Config {
     server: Server,
@@ -29,6 +32,7 @@ struct Config {
 struct Server {
     address: String,
     port: u16,
+    log_level: String,
 }
 
 #[derive(Deserialize)]
@@ -51,13 +55,20 @@ type RResult<T> = result::Result<T, RError>;
 
 #[actix_web::main]
 async fn main() -> RResult<()> {
-    let mut file = File::open(CONFIG_PATH).map_err(|_| RError::Io(format!("can't find {}", CONFIG_PATH)))?;
+    let mut file =
+        File::open(CONFIG_PATH).map_err(|_| RError::Io(format!("can't find {}", CONFIG_PATH)))?;
 
     let mut config = String::new();
 
-    let _ = file.read_to_string(&mut config).map_err(|_| RError::Io(format!("can't read from {}", CONFIG_PATH)))?;
+    let _ = file
+        .read_to_string(&mut config)
+        .map_err(|_| RError::Io(format!("can't read from {}", CONFIG_PATH)))?;
 
-    let config: Config = toml::from_str(&config).map_err(|_| RError::Io(format!("a mistake found in {}", CONFIG_PATH)))?;
+    let config: Config = toml::from_str(&config)
+        .map_err(|_| RError::Io(format!("a mistake found in {}", CONFIG_PATH)))?;
+
+    std::env::set_var("RUST_LOG", config.server.log_level);
+    env_logger::init();
 
     let pool = MySqlPoolOptions::new()
         .max_connections(config.database.max_connection)
@@ -65,11 +76,12 @@ async fn main() -> RResult<()> {
         .await
         .map_err(|_| RError::Database(format!("can't connect to database")))?;
 
-    println!("server start...");
+    info!("server start...");
 
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
+            .wrap(middleware::Logger::default())
             .configure(service::route::init_route)
     })
     .bind((config.server.address, config.server.port))
@@ -78,7 +90,7 @@ async fn main() -> RResult<()> {
     .await
     .map_err(|_| RError::Io(format!("can't run the server")))?;
 
-    println!("server quit...");
+    info!("server quit...");
 
     Ok(())
 }
