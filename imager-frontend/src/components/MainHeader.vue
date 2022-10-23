@@ -19,7 +19,7 @@ export default {
   width: 100vw;
   height: 4vh;
   text-align: center;
-  background-color: black;
+  background-color: #d8b1d4;
 }
 
 .logo {
