@@ -41,7 +41,7 @@ struct Database {
     max_connection: u32,
 }
 
-static CONFIG_PATH: &'static str = "config.toml";
+const CONFIG_PATH: &str = "config.toml";
 
 #[derive(Error, Debug)]
 enum RError {
@@ -74,7 +74,7 @@ async fn main() -> RResult<()> {
         .max_connections(config.database.max_connection)
         .connect(&config.database.database_url)
         .await
-        .map_err(|_| RError::Database(format!("can't connect to database")))?;
+        .map_err(|_| RError::Database("can't connect to database".into()))?;
 
     info!("server start...");
 
@@ -85,10 +85,10 @@ async fn main() -> RResult<()> {
             .configure(service::route::init_route)
     })
     .bind((config.server.address, config.server.port))
-    .map_err(|_| RError::Io(format!("failed to bind the port")))?
+    .map_err(|_| RError::Io("failed to bind the port".into()))?
     .run()
     .await
-    .map_err(|_| RError::Io(format!("can't run the server")))?;
+    .map_err(|_| RError::Io("can't run the server".into()))?;
 
     info!("server quit...");
 
