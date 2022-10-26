@@ -1,4 +1,5 @@
-FROM oldcai/rust-musl-builder:latest as builder
+FROM clux/muslrust:nightly as builder
+
 ADD . /
 WORKDIR /
 
