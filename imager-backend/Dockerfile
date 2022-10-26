@@ -1,7 +1,7 @@
-FROM clux/muslrust:nightly as builder
+FROM rust:lastest as builder
 
-ADD . /
 WORKDIR /
+COPY . .
 
 RUN cargo build --release
 
