@@ -13,10 +13,11 @@ export default {
   data() {
     return {
       images: [],
+      is_load: false,
     };
   },
   methods: {
-    load_images: function () {
+    load_images() {
       let that = this;
       get_images()
         .then((res) => {
@@ -35,16 +36,31 @@ export default {
         document.documentElement.scrollTop || document.body.scrollTop;
       let clientHeight = document.documentElement.clientHeight;
       let scrollHeight = document.documentElement.scrollHeight;
-      if (scrollTop + clientHeight >= scrollHeight) {
+      if (scrollTop + clientHeight >= scrollHeight - clientHeight * 3) {
+        if (this.is_load) {
+          return;
+        }
+
+        this.is_load = true;
         this.load_images();
+        this.is_load = false;
       }
+    },
+    debounce(func, dalay = 100) {
+      let timer;
+      return (...args) => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+          func(...args);
+        }, dalay);
+      };
     },
   },
   created() {
     let that = this;
     this.$nextTick(() => {
       that.load_images();
-      window.addEventListener("scroll", that.lazyLoading);
+      window.addEventListener("scroll", that.debounce(that.lazyLoading, 100));
     });
   },
   unmounted() {
@@ -70,10 +86,11 @@ export default {
 
 .item {
   overflow: hidden;
+  width: 100%;
 }
 
 .image {
   display: block;
-  max-width: 100%;
+  width: 100%;
 }
 </style>
