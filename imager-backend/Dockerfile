@@ -11,6 +11,6 @@ FROM alpine:latest
 
 WORKDIR /app
 COPY --from=builder /build/target/release/imager /app/imager
-COPY --from=builder /config.toml /app/config.toml
+COPY --from=builder /build/config.toml /app/config.toml
 
 CMD ["/app/imager"]
