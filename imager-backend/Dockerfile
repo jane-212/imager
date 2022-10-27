@@ -13,4 +13,4 @@ WORKDIR /app
 COPY --from=builder /build/target/release/imager ./imager
 COPY --from=builder /build/config.toml ./config.toml
 
-CMD ["/app/imager"]
+CMD ["./imager"]
