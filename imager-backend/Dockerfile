@@ -2,6 +2,8 @@ FROM rust:latest as builder
 
 WORKDIR /
 COPY . .
+RUN mkdir -p .cargo
+
 
 RUN cargo build --release
 
