@@ -41,8 +41,6 @@ struct Database {
     max_connection: u32,
 }
 
-const CONFIG_PATH: &str = "config.toml";
-
 #[derive(Error, Debug)]
 enum RError {
     #[error("{0}")]
@@ -55,17 +53,24 @@ type RResult<T> = result::Result<T, RError>;
 
 #[actix_web::main]
 async fn main() -> RResult<()> {
+    let config_path = match std::env::var("CONFIG_PATH") {
+        Ok(path) => path,
+        Err(_) => "conf/config.toml".to_owned(),
+    };
+
+    let config_path = config_path.as_str();
+
     let mut file =
-        File::open(CONFIG_PATH).map_err(|_| RError::Io(format!("can't find {}", CONFIG_PATH)))?;
+        File::open(config_path).map_err(|_| RError::Io(format!("can't find {}", config_path)))?;
 
     let mut config = String::new();
 
     let _ = file
         .read_to_string(&mut config)
-        .map_err(|_| RError::Io(format!("can't read from {}", CONFIG_PATH)))?;
+        .map_err(|_| RError::Io(format!("can't read from {}", config_path)))?;
 
     let config: Config = toml::from_str(&config)
-        .map_err(|_| RError::Io(format!("a mistake found in {}", CONFIG_PATH)))?;
+        .map_err(|_| RError::Io(format!("a mistake found in {}", config_path)))?;
 
     std::env::set_var("RUST_LOG", config.server.log_level);
     env_logger::init();

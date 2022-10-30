@@ -1,16 +1,23 @@
-FROM rust:latest as builder
+FROM ekidd/rust-musl-builder AS build
 
-WORKDIR /build
-COPY . .
-RUN mkdir -p /.cargo
-COPY ./config /.cargo/config
+WORKDIR /app
 
-RUN cargo build --release
+ADD --chown=rust:rust . .
+
+RUN sudo mkdir -p /.cargo \
+&& sudo mv ./config /.cargo/config \
+&& rustup target add x86_64-unknown-linux-musl \
+&& cargo build --release --target=x86_64-unknown-linux-musl
 
 FROM alpine:latest
 
 WORKDIR /app
-COPY --from=builder /build/target/release/imager ./imager
-COPY --from=builder /build/config.toml ./config.toml
 
-CMD ["./imager"]
+RUN mkdir conf
+COPY --from=build /app/target/x86_64-unknown-linux-musl/release/imager ./
+
+VOLUME [ "/app/conf" ]
+
+EXPOSE 8000/tcp
+
+CMD ["/app/imager"]
