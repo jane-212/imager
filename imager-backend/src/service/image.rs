@@ -3,17 +3,15 @@ use actix_web::{
     get,
     HttpResponse
 };
-
 use serde_json::json;
-
 use sqlx::{
     Pool,
     MySql,
 };
-
-use crate::utils::error::IResult;
-
-use crate::model::image;
+use crate::{
+    utils::error::IResult,
+    model::image
+};
 
 pub fn init_route(cfg: &mut web::ServiceConfig) {
     cfg.service(

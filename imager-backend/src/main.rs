@@ -1,25 +1,22 @@
+pub mod service;
+mod utils;
+mod model;
+
 use actix_web::{
     web,
     App,
     HttpServer,
     middleware,
 };
-
 use imager::service;
-
 use std::{
     fs::File,
     io::Read,
+    result
 };
-
 use serde::Deserialize;
-
 use sqlx::mysql::MySqlPoolOptions;
-
 use thiserror::Error;
-
-use std::result;
-
 use log::info;
 
 #[derive(Deserialize)]
