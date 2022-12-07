@@ -75,7 +75,7 @@ export default {
   text-align: center;
   margin: 0 auto;
   overflow: hidden;
-  margin-top: 4vh;
+  margin-top: 3vh;
 }
 
 @media only screen and (max-width: 1024px) {
@@ -87,6 +87,7 @@ export default {
 .item {
   overflow: hidden;
   width: 100%;
+  margin-top: 1vh;
 }
 
 .image {
