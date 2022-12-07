@@ -4,10 +4,7 @@ use sqlx::{
     FromRow,
     mysql::MySqlRow, Row,
 };
-use crate::utils::error::{
-    IError,
-    IResult,
-};
+use crate::utils::error::IResult;
 use serde::Serialize;
 use rand::Rng;
 
@@ -29,8 +26,7 @@ pub async fn get_all_images(pool: &Pool<MySql>) -> IResult<Vec<Image>> {
 
     let row = sqlx::query(sql)
         .fetch_one(pool)
-        .await
-        .map_err(|_| IError::Database)?;
+        .await?;
 
     let total: i32 = row.get(0);
 
@@ -43,8 +39,7 @@ pub async fn get_all_images(pool: &Pool<MySql>) -> IResult<Vec<Image>> {
     let images: Vec<Image> = sqlx::query_as::<_, Image>(sql)
         .bind(begin)
         .fetch_all(pool)
-        .await
-        .map_err(|_| IError::Database)?;
+        .await?;
 
     Ok(images)
 }

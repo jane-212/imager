@@ -10,14 +10,14 @@ use std::result;
 #[derive(Error, Debug)]
 pub enum IError {
     #[error("database error")]
-    Database,
+    Database(#[from] sqlx::Error),
 }
 
 pub type IResult<T> = result::Result<T, IError>;
 
 impl ResponseError for IError {
     fn error_response(&self) -> HttpResponse {
-        HttpResponse::BadRequest()
+        HttpResponse::build(self.status_code())
             .json(json!({
                 "code": -1,
                 "msg": self.to_string(),
@@ -26,7 +26,7 @@ impl ResponseError for IError {
 
     fn status_code(&self) -> StatusCode {
         match *self {
-            IError::Database => StatusCode::INTERNAL_SERVER_ERROR,
+            IError::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }

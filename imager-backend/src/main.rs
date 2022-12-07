@@ -1,4 +1,4 @@
-pub mod service;
+mod service;
 mod utils;
 mod model;
 
@@ -8,16 +8,16 @@ use actix_web::{
     HttpServer,
     middleware,
 };
-use imager::service;
 use std::{
     fs::File,
-    io::Read,
+    io::{self, Read},
     result
 };
 use serde::Deserialize;
 use sqlx::mysql::MySqlPoolOptions;
 use thiserror::Error;
 use log::info;
+use toml::de;
 
 #[derive(Deserialize)]
 struct Config {
@@ -40,10 +40,12 @@ struct Database {
 
 #[derive(Error, Debug)]
 enum RError {
-    #[error("{0}")]
-    Io(String),
-    #[error("{0}")]
-    Database(String),
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error(transparent)]
+    Config(#[from] de::Error),
+    #[error(transparent)]
+    Database(#[from] sqlx::Error),
 }
 
 type RResult<T> = result::Result<T, RError>;
@@ -58,16 +60,14 @@ async fn main() -> RResult<()> {
     let config_path = config_path.as_str();
 
     let mut file =
-        File::open(config_path).map_err(|_| RError::Io(format!("can't find {}", config_path)))?;
+        File::open(config_path)?;
 
     let mut config = String::new();
 
     let _ = file
-        .read_to_string(&mut config)
-        .map_err(|_| RError::Io(format!("can't read from {}", config_path)))?;
+        .read_to_string(&mut config)?;
 
-    let config: Config = toml::from_str(&config)
-        .map_err(|_| RError::Io(format!("a mistake found in {}", config_path)))?;
+    let config: Config = toml::from_str(&config)?;
 
     std::env::set_var("RUST_LOG", config.server.log_level);
     env_logger::init();
@@ -75,8 +75,7 @@ async fn main() -> RResult<()> {
     let pool = MySqlPoolOptions::new()
         .max_connections(config.database.max_connection)
         .connect(&config.database.database_url)
-        .await
-        .map_err(|_| RError::Database("can't connect to database".into()))?;
+        .await?;
 
     info!("server start...");
 
@@ -86,11 +85,9 @@ async fn main() -> RResult<()> {
             .wrap(middleware::Logger::default())
             .configure(service::route::init_route)
     })
-    .bind((config.server.address, config.server.port))
-    .map_err(|_| RError::Io("failed to bind the port".into()))?
+    .bind((config.server.address, config.server.port))?
     .run()
-    .await
-    .map_err(|_| RError::Io("can't run the server".into()))?;
+    .await?;
 
     info!("server quit...");
 
